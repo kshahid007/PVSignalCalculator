@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PV Signal Calculator</title>
+<style>
+:root{--p1:#6a5cff;--p2:#00c2ff;--pink:#ff5fa2;--ok:#12b886;--err:#f03e3e;--ink:#272a4a;--mut:#7b7f9e;--line:#e1e4f5}
+*{box-sizing:border-box}
+body{margin:0;padding:8px;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:linear-gradient(160deg,#6a5cff 0%,#b05cff 45%,#ff7ab8 100%);display:flex;flex-direction:column;align-items:center;gap:14px}
+.card{width:100%;max-width:520px;background:#fff;border-radius:22px;padding:14px;box-shadow:0 12px 30px rgba(40,20,120,.3)}
+h1{margin:-14px -14px 14px;padding:14px 8px;text-align:center;font-size:clamp(14px,5vw,22px);white-space:nowrap;color:#fff;border-radius:22px 22px 0 0;background:linear-gradient(90deg,var(--p1),var(--p2))}
+label,.lbl{display:block;font-size:.72rem;font-weight:700;color:var(--mut);margin:0 0 4px 2px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+input[type=text],select{width:100%;min-width:0;padding:10px 8px;border:2px solid var(--line);border-radius:12px;font-size:.95rem;background:#fafaff;color:var(--ink)}
+input:focus,select:focus{outline:none;border-color:var(--p1);box-shadow:0 0 0 3px rgba(106,92,255,.18)}
+.seg{display:flex;background:#eef0ff;border-radius:14px;padding:4px;gap:4px;margin-bottom:14px}
+.seg label{flex:1;margin:0;text-align:center;padding:10px 4px;border-radius:11px;font-size:clamp(11px,3.6vw,14px);text-transform:none;letter-spacing:0;color:var(--mut);cursor:pointer;transition:.2s}
+.seg input{display:none}
+.seg label:has(input:checked){background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;box-shadow:0 4px 10px rgba(106,92,255,.4)}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.sgn{display:flex;gap:3px}
+.sgn button{flex:0 0 30px;border:0;border-radius:10px;background:linear-gradient(135deg,var(--pink),#ff8a5f);color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;padding:0}
+.sgn input{flex:1;padding-left:6px;padding-right:4px}
+.row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.hide{display:none!important}
+input[type=range]{width:100%;margin:10px 0 4px;accent-color:var(--p1)}
+.qb{display:flex;gap:5px;margin-top:6px}
+.qb button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;line-height:1.2;padding:8px 2px;font-size:clamp(9px,2.9vw,12px);border:0;border-radius:10px;background:#eef0ff;color:var(--p1);font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qb button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qb .qu{font-size:.85em;font-weight:500;opacity:.8}
+.qb button:active,.qb button.active{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff}
+.rh{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.rh h2{margin:0;font-size:1.05rem;color:var(--p1)}
+.chev{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;display:flex;align-items:center;justify-content:center;transition:transform .25s;font-size:.8rem}
+.open .chev{transform:rotate(180deg)}
+#refBody{display:none;margin-top:12px}
+.open #refBody{display:block}
+table.ref{width:100%;border-collapse:collapse;table-layout:fixed;font-size:clamp(9px,2.7vw,12px)}
+.ref th,.ref td{border:1px solid var(--line);padding:6px 2px;text-align:center;word-break:break-word}
+.ref thead th{background:linear-gradient(90deg,var(--p1),var(--p2));color:#fff}
+.ref tbody tr:nth-child(even){background:#f5f6ff}
+.ref tbody th{color:var(--p1)}
+h1{position:relative;padding-left:40px;padding-right:40px}
+#infoBtn{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:transparent;color:#fff;font:italic 700 15px Georgia,serif;line-height:1;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#infoBtn:active{background:rgba(255,255,255,.3)}
+#modal{position:fixed;inset:0;background:rgba(20,10,60,.6);display:none;align-items:center;justify-content:center;padding:14px;z-index:10}
+#modal.show{display:flex}
+.mbox{background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.4);overflow:hidden}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;color:#fff;background:linear-gradient(90deg,var(--p1),var(--p2))}
+.mhead b{font-size:clamp(13px,4vw,16px)}
+.mhead button{border:0;background:rgba(255,255,255,.25);color:#fff;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;flex:0 0 28px}
+.mbody{padding:14px;overflow-y:auto;font-size:.82rem;line-height:1.5;text-align:left;-webkit-overflow-scrolling:touch}
+.mbody h3{margin:14px 0 4px;font-size:.9rem;color:var(--p1)}
+.mbody h3:first-child{margin-top:0}
+.mbody p{margin:0 0 8px}
+.mbody ul{margin:0 0 8px;padding-left:20px}
+footer{width:100%;max-width:520px;text-align:center;color:#fff;font-size:clamp(6.75px,2.175vw,9px);padding:4px 0 10px;line-height:1.6;white-space:nowrap;margin:0 -8px;width:calc(100% + 16px)}
+footer a{color:#fff;font-weight:700}
+.panel{border-radius:18px;padding:10px;margin-bottom:14px}
+.panel>:last-child{margin-bottom:0!important}
+.panel.p1{background:linear-gradient(145deg,#eef1ff,#dff3ff)}
+.panel.p2{background:linear-gradient(150deg,#ffe4ef,#ffc8dc)}
+.panel input[type=text],.panel select{background:#fff}
+.p2 .qb button{background:#fff3f8;color:#b8326f;border:1.5px solid #ffb3d1}
+.p2 .qb button:active,.p2 .qb button.active{background:linear-gradient(135deg,#ff6aa8,#e0407f);color:#fff;border-color:#e0407f;box-shadow:0 3px 8px rgba(224,64,127,.35)}
+.p2 input[type=range]{accent-color:#e0407f}
+.p2 label,.p2 .lbl{color:#9c3d68}
+.p1 label{color:#5a63a8}
+.nat{display:none!important}
+.pickbtn{width:100%;min-width:0;padding:10px 26px 10px 8px;border:2px solid var(--line);border-radius:12px;font-size:.95rem;background:#fff;color:var(--ink);text-align:left;position:relative;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.pickbtn::after{content:"▾";position:absolute;right:5px;top:50%;transform:translateY(-50%);color:var(--p1);font-size:1.7rem;line-height:1}
+#pickModal{position:fixed;inset:0;background:rgba(20,10,60,.6);display:none;align-items:center;justify-content:center;padding:14px;z-index:11}
+#pickModal.show{display:flex}
+#pickModal .mbox{max-width:360px}
+#pickList{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pitem{display:block;width:100%;text-align:left;padding:13px 16px;border:0;border-bottom:1px solid var(--line);background:#fff;font-size:1rem;color:var(--ink);cursor:pointer}
+.pitem.sel{background:#eef0ff;color:var(--p1);font-weight:700}
+.pitem.sel::after{content:" ✓"}
+.pitem:active{background:#e3e6ff}
+.sgn{gap:0;border:2px solid var(--line);border-radius:12px;overflow:hidden;background:transparent}
+.sgn:focus-within{border-color:var(--p1);box-shadow:0 0 0 3px rgba(106,92,255,.18)}
+.sgn button{flex:0 0 32px;background:transparent;color:var(--p1);border:0;border-right:2px solid var(--line);border-radius:0;font-weight:700;font-size:1rem;cursor:pointer;padding:0}
+.sgn button:active{background:rgba(0,0,0,.08)}
+.sgn input[type=text]{flex:1;border:0;border-radius:0;box-shadow:none;background:#fff}
+.vgrid{display:grid;grid-template-columns:minmax(0,1.7fr) 6px repeat(3,minmax(0,1fr));column-gap:4px;row-gap:3px;margin-bottom:8px}
+.vgrid label,.vgrid .lbl{font-size:clamp(8px,2.5vw,11px);letter-spacing:0;margin:0 0 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vgrid .sgn,.cell{height:44px}
+.cell{background:#fff;border:2px solid var(--line);border-radius:12px;padding:0 5px 0 8px;display:flex;align-items:center;justify-content:flex-start;text-align:left;font-weight:800;font-size:clamp(9px,3vw,14px);overflow:hidden;white-space:nowrap;min-width:0}
+.msg{font-size:.8rem;font-weight:700;margin:0 0 4px 2px}
+.msg.err{color:var(--err)}.msg.neutral{color:#9c3d68}
+.sgn button,.p2 .sgn button{color:#fff;text-shadow:0 0 3px rgba(60,40,140,.55)}
+.cell{background:transparent;border:0;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:default;font-size:clamp(9.45px,3.15vw,14.7px)}
+#pLrv,#pUrv,#sLrv,#sUrv,#inVal{font-size:.9975rem}
+.qb button{font-size:clamp(9.45px,3.045vw,12.6px)}
+table.ref{font-size:clamp(9.45px,2.835vw,12.6px)}
+.vgrid>:nth-child(4n+1){grid-column:1}
+.vgrid>:nth-child(4n+2){grid-column:3}
+.vgrid>:nth-child(4n+3){grid-column:4}
+.vgrid>:nth-child(4n){grid-column:5}
+.vgrid>:nth-child(-n+4){grid-row:1}
+.vgrid>:nth-child(n+5){grid-row:2}
+.vgrid label,.vgrid .lbl{text-transform:none;font-size:clamp(9px,2.8vw,12px)}
+.vgrid .lbl{text-align:center;margin:0}
+.vgrid .sgn button{flex:0 0 28px}
+.vgrid .sgn input[type=text]{padding-left:4px;padding-right:2px}
+.cell{justify-content:center;text-align:center;padding:0 1px}
+.sgn button,.p2 .sgn button{color:#b8bcc6;text-shadow:none}
+.p2 .sgn{border-color:#ffc2d9}
+.p2 .sgn button{border-right-color:#ffc2d9}
+.p2 .sgn:focus-within{border-color:#e0407f;box-shadow:0 0 0 3px rgba(224,64,127,.2)}
+.ro{height:44px;display:flex;align-items:center;padding:0 10px;border:2px solid var(--line);border-radius:12px;background:rgba(255,255,255,.55);color:var(--p1);font-weight:800;font-size:.9975rem;white-space:nowrap;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:default}
+.spanrow{display:flex;align-items:baseline;gap:8px;margin:-2px 0 12px 2px}
+.spanrow label{margin:0}
+#spanV{color:var(--p1);font-weight:800;font-size:.9975rem;white-space:nowrap;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:default}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,select{-webkit-user-select:text;user-select:text}
+</style>
+<meta name="theme-color" content="#6a5cff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PV Signal">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+</head>
+<body>
+<div class="card">
+  <h1>⚙️ PV Signal Calculator<button type="button" id="infoBtn" aria-label="About, copyright and disclaimer">i</button></h1>
+  <div class="seg">
+    <label><input type="radio" name="calcType" value="pvToSignal" checked>Process → Signal</label>
+    <label><input type="radio" name="calcType" value="signalToPv">Signal → Process</label>
+  </div>
+
+  <div class="panel p1">
+  <div class="row3">
+    <div><label for="pLrv">Process LRV</label><div class="sgn"><button type="button" data-sign="pLrv">±</button><input type="text" id="pLrv" inputmode="decimal" value="-10"></div></div>
+    <div><label for="pUrv">Process URV</label><div class="sgn"><button type="button" data-sign="pUrv">±</button><input type="text" id="pUrv" inputmode="decimal" value="10"></div></div>
+    <div><label for="pUnitSel">Process Unit</label>
+      <select id="pUnitSel"></select>
+      <div id="pUnitCustomWrap" class="sgn hide"><input type="text" id="pUnitCustom" placeholder="Type unit" autocomplete="off" style="padding-left:8px"><button type="button" id="unitBack" title="Back to unit list" style="flex:0 0 28px;border-right:0;border-left:2px solid var(--line)">▼</button></div></div>
+  </div>
+
+  <div class="spanrow"><label>SPAN (URV-LRV):</label><span id="spanV">-</span></div>
+
+  <div style="margin-bottom:12px">
+    <label for="sigType">Output Signal Type</label>
+    <select id="sigType">
+      <option value="4-20-mA" selected>4-20 mA</option>
+      <option value="1-5-V">1-5 V</option>
+      <option value="10-50-mA">10-50 mA</option>
+      <option value="3-15-PSI">3-15 PSI</option>
+      <option value="custom">Custom Range...</option>
+    </select>
+  </div>
+  <div id="customSig" class="row2 hide">
+    <div><label for="sLrv">Signal LRV</label><div class="sgn"><button type="button" data-sign="sLrv">±</button><input type="text" id="sLrv" inputmode="decimal" value="0"></div></div>
+    <div><label for="sUrv">Signal URV</label><div class="sgn"><button type="button" data-sign="sUrv">±</button><input type="text" id="sUrv" inputmode="decimal" value="10"></div></div>
+    <div><label for="sUnit">Signal Unit</label><input type="text" id="sUnit" value="V"></div>
+  </div>
+  </div>
+
+  <div class="panel p2">
+    <div class="vgrid">
+      <label for="inVal" id="inLabel">Process Value</label>
+      <div class="lbl">Linear</div>
+      <div class="lbl">Square Root</div>
+      <div class="lbl">Unit</div>
+      <div class="sgn"><button type="button" data-sign="inVal">±</button><input type="text" id="inVal" inputmode="decimal" placeholder="Value"></div>
+      <div class="cell" id="linV" style="color:#c2185b">-</div>
+      <div class="cell" id="sqV" style="color:#8e24aa">-</div>
+      <div class="cell" id="uV" style="color:#9c5a78;font-weight:600"></div>
+    </div>
+    <div id="vmsg" class="msg hide"></div>
+    <input type="range" id="slider" step="any">
+    <div class="qb" id="qb"></div>
+  </div>
+</div>
+
+<div class="card" id="refCard">
+  <div class="rh" id="refHead"><h2>Reference Table</h2><div class="chev">▼</div></div>
+  <div id="refBody">
+    <table class="ref">
+      <thead><tr><th>%</th><th id="thPv">PV</th><th>4-20 mA</th><th>3-15 PSI</th><th>1-5 V</th><th id="thCu">Custom</th></tr></thead>
+      <tbody id="refRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>© 2026 Kamran Shahid | All Rights Reserved | WhatsApp: <a href="https://wa.link/qko4cz" target="_blank" rel="noopener">https://wa.link/qko4cz</a></footer>
+
+<div id="pickModal" role="dialog" aria-modal="true">
+  <div class="mbox">
+    <div class="mhead"><b id="pickTitle">Select</b><button type="button" id="pickClose" aria-label="Close">✕</button></div>
+    <div id="pickList"></div>
+  </div>
+</div>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="mbox">
+    <div class="mhead"><b id="mTitle">Process Value Signal Calculator</b><button type="button" id="mClose" aria-label="Close">✕</button></div>
+    <div class="mbody">
+      <h3>Copyright, Ownership &amp; Disclaimer</h3>
+      <p>© 2026 Kamran Shahid. All Rights Reserved.</p>
+      <p>The Process Value Signal Calculator, including its design, user interface, layout, calculations, formulas as implemented, source code, graphics, text, documentation, structure, and overall presentation, is the original work of the author and is protected by applicable copyright and intellectual property laws.</p>
+      <h3>All Rights Reserved</h3>
+      <p>No part of this application may be copied, reproduced, republished, distributed, transmitted, modified, adapted, reverse-engineered, decompiled, disassembled, or used to create a substantially similar application, website, calculator, or derivative work without prior written permission from the copyright owner.</p>
+      <p>The application may not be:</p>
+      <ul>
+        <li>Copied or reproduced in whole or in part.</li>
+        <li>Rebranded, renamed, or presented as another person's or organization's work.</li>
+        <li>Modified and redistributed without written permission.</li>
+        <li>Incorporated into another software product, website, application, or commercial service without written permission.</li>
+        <li>Distributed, sold, sublicensed, or commercially exploited without written permission.</li>
+        <li>Used to create a substantially similar copy of the application's design, interface, functionality, or implementation.</li>
+      </ul>
+      <p>The name, design, interface, structure, presentation, and original implementation of this application are protected and remain the property of the copyright owner.</p>
+      <h3>Engineering Disclaimer</h3>
+      <p>This application is provided "AS IS" for calculation, reference, educational, and engineering-support purposes.</p>
+      <p>Although reasonable care has been taken in developing the calculations and functionality, the author does not warrant that the results are always accurate, complete, error-free, or suitable for every engineering application, instrument, process, plant, or operating condition.</p>
+      <p>Users are responsible for independently verifying all calculated values and determining their suitability before using them for engineering decisions, equipment configuration, process control, commissioning, operation, maintenance, safety-related functions, or any other critical application.</p>
+      <p>This application must not be used as the sole basis for safety-critical, protection, control, or operational decisions.</p>
+      <p>The author assumes no liability for any loss, damage, equipment failure, process upset, production loss, injury, or other consequence resulting from the use of, reliance upon, or inability to use this application or its calculated results.</p>
+      <h3>Third-Party Materials</h3>
+      <p>Any third-party trademarks, product names, standards, manufacturers' names, or other referenced materials remain the property of their respective owners. Their appearance in this application does not imply ownership, sponsorship, or endorsement by the author.</p>
+      <h3>Permission Requests</h3>
+      <p>Requests for permission to reproduce, modify, redistribute, integrate, or commercially use any part of this application should be directed to the copyright owner before such use.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const UNITS="PSI,Kg/cm2,mBar,Bar,Pa,KPa,MPa,mmH2O,inH2O,ftH2O,mmHg,inHg,%,°C,°F,K,mm,Inch,Feet,Meter,Kg/h,m3/hr,T/h,µS/cm,PPM,PPB,mg/L,mV,pH".split(",");
+const sel=$("pUnitSel");
+UNITS.forEach(u=>sel.add(new Option(u,u)));
+sel.add(new Option("Custom...","__custom"));
+sel.value="PSI";
+
+const num=id=>parseFloat($(id).value);
+const mode=()=>document.querySelector('input[name=calcType]:checked').value;
+const pUnit=()=>sel.value==="__custom"?($("pUnitCustom").value.trim()):sel.value;
+function sig(){
+  const v=$("sigType").value;
+  if(v==="custom")return{lrv:num("sLrv"),urv:num("sUrv"),unit:$("sUnit").value.trim()};
+  const p=v.split("-");return{lrv:+p[0],urv:+p[1],unit:p[2]};
+}
+const f2=n=>n.toFixed(2);
+
+function setResult(err,msg,neutral){
+  const m=$("vmsg");
+  m.className="msg "+(err?"err":(neutral?"neutral":"hide"));
+  m.textContent=msg||"";
+  if(err||neutral){$("linV").textContent="-";$("sqV").textContent="-"}
+}
+
+function buildQuick(){
+  const m=mode(),s=sig();
+  let lo,hi;
+  if(m==="pvToSignal"){lo=num("pLrv");hi=num("pUrv")}else{lo=s.lrv;hi=s.urv}
+  const q=$("qb");q.innerHTML="";
+  const bad=isNaN(lo)||isNaN(hi);
+  const u=m==="pvToSignal"?pUnit():s.unit;
+  [0,.25,.5,.75,1].forEach(p=>{
+    const v=bad?NaN:lo+p*(hi-lo),b=document.createElement("button");
+    const t=bad?"-":f2(v);
+    b.type="button";b.title=t+(u?" "+u:"");b.dataset.v=bad?"":v;
+    const a=document.createElement("span");a.textContent=t;b.appendChild(a);
+    if(u){const c=document.createElement("span");c.className="qu";c.textContent=u;b.appendChild(c)}
+    q.appendChild(b);
+  });
+}
+
+function updateUI(){
+  const m=mode(),s=sig();
+  const cu=sel.value==="__custom";
+  $("pUnitCustomWrap").classList.toggle("hide",!cu);
+  $("pUnitBtn").classList.toggle("hide",cu);
+  $("customSig").classList.toggle("hide",$("sigType").value!=="custom");
+  const u=m==="pvToSignal"?pUnit():s.unit;
+  $("inLabel").textContent=m==="pvToSignal"?"Process Value":"Signal Value";
+  let lo=m==="pvToSignal"?num("pLrv"):s.lrv,hi=m==="pvToSignal"?num("pUrv"):s.urv;
+  if(!isNaN(lo)&&!isNaN(hi)&&lo!==hi){const mn=Math.min(lo,hi),mx=Math.max(lo,hi);$("slider").min=mn;$("slider").max=mx;
+    const c=num("inVal");if(!isNaN(c)&&c>=mn&&c<=mx)$("slider").value=c;}
+  buildQuick();
+}
+
+function calc(){
+  const cv=num("inVal");document.querySelectorAll("#qb button").forEach(b=>b.classList.toggle("active",!isNaN(cv)&&b.dataset.v!==""&&f2(+b.dataset.v)===f2(cv)));
+  const pl=num("pLrv"),pu=num("pUrv"),s=sig(),v=num("inVal"),m=mode();
+  const pun=pUnit();
+  $("uV").textContent=m==="pvToSignal"?s.unit:pun;
+  if($("inVal").value.trim()===""){setResult(false,"Enter a value to see the result.",true);return}
+  if([pl,pu,s.lrv,s.urv,v].some(isNaN)){setResult(true,"Invalid numeric input.");return}
+  if(pl===pu){setResult(true,"Process LRV and URV cannot be equal.");return}
+  if(s.lrv===s.urv){setResult(true,"Signal LRV and URV cannot be equal.");return}
+  const lo=m==="pvToSignal"?pl:s.lrv,hi=m==="pvToSignal"?pu:s.urv;
+  const mn=Math.min(lo,hi),mx=Math.max(lo,hi);
+  if(v<mn||v>mx){setResult(true,`Input is outside range [${mn} to ${mx}].`);return}
+  const pct=(v-lo)/(hi-lo);
+  let lin,sq;
+  if(m==="pvToSignal"){lin=s.lrv+pct*(s.urv-s.lrv);sq=s.lrv+pct*pct*(s.urv-s.lrv)}
+  else{lin=pl+pct*(pu-pl);sq=pl+Math.sqrt(pct)*(pu-pl)}
+  $("linV").textContent=lin.toFixed(4);$("sqV").textContent=sq.toFixed(4);
+  setResult(false,"");
+}
+
+function refTable(){
+  const pl=num("pLrv"),pu=num("pUrv"),pun=pUnit()||"Unit",sl=num("sLrv"),su=num("sUrv"),sun=$("sUnit").value.trim();
+  $("thPv").textContent="PV ("+pun+")";
+  $("thCu").textContent="Custom"+(sun?" ("+sun+")":"");
+  const pOk=!isNaN(pl)&&!isNaN(pu),cOk=$("sigType").value==="custom"&&!isNaN(sl)&&!isNaN(su);
+  $("refRows").innerHTML=[0,.25,.5,.75,1].map(p=>{
+    const pv=pOk?f2(pl+p*(pu-pl)):"-",cu=cOk?f2(sl+p*(su-sl)):"-";
+    return `<tr><th>${p*100}%</th><td>${pv}</td><td>${f2(4+p*16)}</td><td>${f2(3+p*12)}</td><td>${f2(1+p*4)}</td><td>${cu}</td></tr>`;
+  }).join("");
+}
+
+function updateSpan(){const a=num("pUrv")-num("pLrv");$("spanV").textContent=isNaN(a)?"-":String(+a.toFixed(4))}
+function all(){updateSpan();updateUI();calc();refTable();syncPickers()}
+
+["pLrv","pUrv","sLrv","sUrv","inVal"].forEach(id=>$(id).addEventListener("input",()=>{
+  const e=$(id);let t=e.value.replace(/[^0-9.\-]/g,"");const neg=t.startsWith("-");t=t.replace(/-/g,"");
+  const i=t.indexOf(".");if(i>-1)t=t.slice(0,i+1)+t.slice(i+1).replace(/\./g,"");
+  t=(neg?"-":"")+t;if(t!==e.value)e.value=t;
+}));
+["pLrv","pUrv","pUnitCustom","sLrv","sUrv","sUnit"].forEach(id=>$(id).addEventListener("input",all));
+sel.addEventListener("change",()=>{all();if(sel.value==="__custom")$("pUnitCustom").focus()});
+$("unitBack").addEventListener("click",()=>{sel.value="PSI";all()});$("sigType").addEventListener("change",all);
+document.querySelectorAll("input[name=calcType]").forEach(r=>r.addEventListener("change",all));
+
+$("inVal").addEventListener("input",()=>{const v=num("inVal");if(!isNaN(v))$("slider").value=v;calc()});
+$("slider").addEventListener("input",()=>{$("inVal").value=f2(+$("slider").value);calc()});
+$("qb").addEventListener("click",e=>{
+  const bt=e.target.closest("button");if(!bt)return;
+  if(bt.dataset.v==="")return;
+  const v=+bt.dataset.v;$("inVal").value=f2(v);$("slider").value=v;calc();
+});
+document.querySelectorAll("[data-sign]").forEach(b=>b.addEventListener("click",()=>{
+  const i=$(b.dataset.sign),t=i.value.trim();
+  i.value=t.startsWith("-")?t.slice(1):"-"+t;
+  i.dispatchEvent(new Event("input"));i.focus();
+}));
+
+$("refHead").addEventListener("click",()=>$("refCard").classList.toggle("open"));
+const modal=$("modal"),openM=()=>modal.classList.add("show"),closeM=()=>modal.classList.remove("show");
+$("infoBtn").addEventListener("click",openM);
+$("mClose").addEventListener("click",closeM);
+modal.addEventListener("click",e=>{if(e.target===modal)closeM()});
+const pickModal=$("pickModal"),pickList=$("pickList"),pickers=[];
+const closeP=()=>pickModal.classList.remove("show");
+$("pickClose").addEventListener("click",closeP);
+pickModal.addEventListener("click",e=>{if(e.target===pickModal)closeP()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeM();closeP()}});
+function makePicker(selEl,btnId,title){
+  const b=document.createElement("button");b.type="button";b.id=btnId;b.className="pickbtn";
+  selEl.classList.add("nat");selEl.parentNode.insertBefore(b,selEl);
+  b.addEventListener("click",()=>{
+    $("pickTitle").textContent=title;pickList.innerHTML="";
+    [...selEl.options].forEach(o=>{
+      const i=document.createElement("button");i.type="button";
+      i.className="pitem"+(o.value===selEl.value?" sel":"");i.textContent=o.text;
+      i.addEventListener("click",()=>{selEl.value=o.value;selEl.dispatchEvent(new Event("change"));closeP()});
+      pickList.appendChild(i);
+    });
+    pickModal.classList.add("show");
+    const c=pickList.querySelector(".sel");if(c)c.scrollIntoView({block:"center"});
+  });
+  pickers.push([selEl,b]);
+}
+function syncPickers(){pickers.forEach(([x,b])=>{b.textContent=x.options[x.selectedIndex].text})}
+makePicker(sel,"pUnitBtn","Process Unit");
+makePicker($("sigType"),"sigBtn","Output Signal Type");
+$("inVal").value=f2(num("pLrv"));
+all();
+})();
+</script>
+<script>if("serviceWorker"in navigator&&location.protocol.indexOf("http")===0){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
+</body>
+</html>
